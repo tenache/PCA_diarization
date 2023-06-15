@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 from funciones_auxiliares import segment_embeddings_divided, get_labels_with_clustering, get_pandas
 from funciones_auxiliares import write_csv, create_srt_file, get_audio_siosi, print_time
 
-
+import os
 import pandas as pd
 
 def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", return_dur=False):
@@ -34,6 +34,8 @@ def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_
     embeddings = segment_embeddings_divided(segments, segs_per_seg, embeddings, duration, embedding_model, audio_file) 
     embeddings = np.nan_to_num(embeddings) # saco los valores no validos
     # lodeamos el modelo pre-entrenado
+    os.path.join()
+    
     with open('pca.pkl', 'rb') as f:
         pca = pickle.load(f)
      

@@ -24,6 +24,7 @@ from sklearn.decomposition import PCA
 
 import pickle as pk
 from get_embeddings import get_embeddings
+from diarization_limpio import call_diarization
 
 # Lo que queda por hacer es que esto, que esta fiteado con todos los trailers, usarlo para sacar componentes con solamente transform para cada uno de los embeddings que
 # queremos utilizar. 
@@ -42,7 +43,7 @@ def get_pca(directory, n_components):
     all_embeddings = []
     for file_path in audio_and_video_f:
         print(f"file_path is {file_path}")
-        embeddings, segments, audio_file, duration = get_embeddings(8, "English","medium",1,file_path)
+        embeddings, segments, audio_file, duration = get_embeddings(8, "English","tiny",1,file_path)
         for embedding in embeddings:
             all_embeddings.append(embedding)
         
@@ -72,4 +73,8 @@ if __name__ == "__main__":
     # parser.add_argument("--dir", default='data', help="directorio donde se encuentran los archivos", type=str)
     # parser.add_argument("--n_components", default=96, help="numero de elementos que tendra el vector de salida por sobre el cual haremos el analisis de aglomeracion", type=str)
     # args = parser.parse_args
-    get_pca(r'D:\PCA_AUDIOS\audios_2', 96)
+    get_pca('/home/thibbard/thibbard/PCA_diarization/audios_2', 96)
+    call_diarization('audio.wav', root_dir='/home/thibbard/thibbard/PCA_diarization/audios_2', 
+                     model_size='tiny', language="English", num_speakers=7, 
+                     segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time=True)
+    
