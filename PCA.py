@@ -72,4 +72,4 @@ if __name__ == "__main__":
     # parser.add_argument("--dir", default='data', help="directorio donde se encuentran los archivos", type=str)
     # parser.add_argument("--n_components", default=96, help="numero de elementos que tendra el vector de salida por sobre el cual haremos el analisis de aglomeracion", type=str)
     # args = parser.parse_args
-    get_pca(r'D:\PCA_AUDIOS\AUDIOS', 96)
+    get_pca(r'D:\PCA_AUDIOS\audios_2', 96)
