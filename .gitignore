@@ -102,6 +102,9 @@ audios_2/
 *.flac
 *.mp4
 
+# Except for 
+!requirements.txt
+
 #ffmpeg files
 ffmpeg-2023-06-11-git-09621fd7d9-full_build.7z:Zone.Identifier
 ffmpeg-2023-06-11-git-09621fd7d9-full_build.7z
