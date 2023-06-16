@@ -15,12 +15,14 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import SpectralClustering
 from sklearn.cluster import SpectralClustering
 from sklearn.mixture import BayesianGaussianMixture
+
 import numpy as np 
 import os
 from moviepy.editor import VideoFileClip
 from argparse import ArgumentParser
 from pydub import AudioSegment
 from sklearn.decomposition import PCA
+
 
 import pickle as pk
 from get_embeddings import get_embeddings
@@ -46,18 +48,19 @@ def get_pca(directory, n_components):
         embeddings, segments, audio_file, duration = get_embeddings(8, "English","tiny",1,file_path)
         for embedding in embeddings:
             all_embeddings.append(embedding)
-        
-    pca = PCA(n_components=n_components,copy=True)
+    #OJO: cambiar n_components 
+    pca = PCA(n_components=20,copy=True)
     # print(f"all_embeddings is {all_embeddings}")
     print(f"all_embeddings.shape is {all_embeddings}")
     max_len = 0
     for embedding in all_embeddings:
         print(f"len of embeddng is {len(embedding)}")
     
-    X = np.array(all_embeddings).T
+    X = np.array(all_embeddings)
     print(f"X.shape is {X.shape}")
 
     print(X.shape)
+    #OJO: change components
     pca.fit(X)
     pca_path = os.path.join(directory, "pca.pkl")
     pk.dump(pca,open(pca_path,"wb"))
@@ -73,8 +76,8 @@ if __name__ == "__main__":
     # parser.add_argument("--dir", default='data', help="directorio donde se encuentran los archivos", type=str)
     # parser.add_argument("--n_components", default=96, help="numero de elementos que tendra el vector de salida por sobre el cual haremos el analisis de aglomeracion", type=str)
     # args = parser.parse_args
-    get_pca('/home/thibbard/thibbard/PCA_diarization/audios_2', 96)
-    call_diarization('audio.wav', root_dir='/home/thibbard/thibbard/PCA_diarization/audios_2', 
+    get_pca('audios_2', 96)
+    call_diarization('videoplayback.wav', root_dir='/home/thibbard/thibbard/PCA_diarization/audios_2', 
                      model_size='tiny', language="English", num_speakers=7, 
                      segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time=True)
     

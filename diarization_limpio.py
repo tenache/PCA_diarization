@@ -34,9 +34,9 @@ def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_
     embeddings = segment_embeddings_divided(segments, segs_per_seg, embeddings, duration, embedding_model, audio_file) 
     embeddings = np.nan_to_num(embeddings) # saco los valores no validos
     # lodeamos el modelo pre-entrenado
-    os.path.join()
     
-    with open('pca.pkl', 'rb') as f:
+    # OJO: cambiar audios_2
+    with open('audios_2/pca.pkl', 'rb') as f:
         pca = pickle.load(f)
      
     # estos embeddings son mas cortos y deberian funcionar mejor 
@@ -45,7 +45,7 @@ def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_
     
     # get labels
     # hay que cambiar chooose_num_speakers a false si queremos elegir de antemano
-    labels = get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=False)
+    labels = get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=True)
     segments_df = get_pandas(segments, labels)
     if return_dur:
         return segments_df, duration
