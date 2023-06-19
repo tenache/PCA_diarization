@@ -15,7 +15,7 @@ from funciones_auxiliares import write_csv, create_srt_file, get_audio_siosi, pr
 import os
 import pandas as pd
 
-def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", return_dur=False):
+def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", return_dur=False,num_speakers_auto=True):
     
     # defino el model de embedding
     embedding_model = PretrainedSpeakerEmbedding(
@@ -45,7 +45,7 @@ def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_
     
     # get labels
     # hay que cambiar chooose_num_speakers a false si queremos elegir de antemano
-    labels = get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=True)
+    labels = get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=num_speakers_auto)
     segments_df = get_pandas(segments, labels)
     if return_dur:
         return segments_df, duration
@@ -54,7 +54,8 @@ def diarization(audio_file, segments, num_speakers=7, segs_per_seg=1, embedding_
 
 def call_diarization(audio_file, root_dir=None, 
                      model_size='base', language="English", num_speakers=7, 
-                     segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time = False):
+                     segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time = False,
+                     num_speakers_auto=True):
     
     start = time()
     if language == 'English' and model_size != 'large':
@@ -71,7 +72,7 @@ def call_diarization(audio_file, root_dir=None,
     # obtenemos el resultado de whisper
     segments = model.transcribe(audio_file, verbose=True)["segments"]
 
-    segments_df, duration = diarization(audio_file, segments, num_speakers, segs_per_seg, embedding_name,return_dur=True)
+    segments_df, duration = diarization(audio_file, segments, num_speakers, segs_per_seg, embedding_name,return_dur=True, num_speakers_auto=num_speakers_auto)
 
     if tell_time:
         checkpoints.append(time())

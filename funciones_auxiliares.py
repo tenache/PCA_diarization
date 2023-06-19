@@ -11,7 +11,7 @@ from sklearn.cluster import AgglomerativeClustering
 from time import sleep
 from sklearn.metrics import calinski_harabasz_score
 import math
-
+from random import random
 # TODO: I need to debug the shit out of this .... 
 
 
@@ -41,16 +41,25 @@ def get_clustering( embeddings,num_speakers=7, num_speakers_auto=False, distance
         clustering = AgglomerativeClustering(num_speakers).fit(embeddings)
     else:
         clustering = AgglomerativeClustering(n_clusters=None,compute_full_tree=True,distance_threshold=distance).fit(embeddings)
-        score = calinski_harabasz_score(embeddings,clustering.labels_)
+        # print(f'length of clustering.labels_ is {len(clustering.labels_)}')
+        # print(f'len of embeddings is {len(embeddings)}')
+        sleep(2)
+        try:
+            score = calinski_harabasz_score(embeddings,clustering.labels_)
+            print(f'score is {score}')
+        except ValueError as e:
+            print(e)
+            score = math.inf
+            
         # print(score)
     return clustering, score
 
 def get_final_labels(labels_div, segs_per_seg):
     all_speakers = set()
     labels = []
-    total_speakers = 0
+    # total_speakers = 0
     for i in range(0,len(labels_div), segs_per_seg):
-        print(f"len of labels is {len(labels_div)}")
+        # print(f"len of labels is {len(labels_div)}")
         label1 = labels_div[i]
         all_equal = True
 
@@ -62,45 +71,96 @@ def get_final_labels(labels_div, segs_per_seg):
             else:
                 all_speakers.add(label1)
                 labels.append(label1)
-                print(f"len(all_speakers) is {len(all_speakers)}")
+                # print(f"len(all_speakers) is {len(all_speakers)}")
                 # total_speakers += 1
     return labels, len(all_speakers)
     
 
-def get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=False, distance=2000, range_=(3, 4)):
-
+def get_labels_with_clustering(num_speakers, embeddings, segs_per_seg, num_speakers_auto=False, distance=2000, range_=(3, 5), alpha=1):
+    # vamos a explicar un poquito el codigo asi no nos perdemos
+    
+    # si num_speakers_auto es verdadero, significa que no le vamos a pasar a AgglomerativeClustering el numero de speakers, sino una
+    # distancia minima
+    
+    # vamos a obtener un score a partir de calinski_harabasz_score(), que nos indica en cuanto se reduce la variabilidad con cada nivel de clustering.
+    # lo que hace este score es compara cuan cerca esta de los puntos dentro su propio cluster vs los puntos por fuera del cluster. 
+    # A diferencia de clustering pelado, que a clusters mas grandes reduce siempre su metrica, que es la distancia entre clusters 
+    # (con un solo gran cluster seria 0), esta metrica puede disminuir con clusters mas grandes (excepto si es uno, que deberia romperse?), ya
+    # que si le incluyo en el cluster puntos que estan muy seprados, disminuye el score ...  
+    # Es decir, esto va a favorecer clusters densos ... 
+    
     total_speakers = 0
     
+    # all_clusterings va a ser una lista de todos los labels, y guardo el indice del mejor
+    # puede que en futuro solo guarde los labels, pero la idea es tener info por ahora y despues ver que hago con lo otro ...  
     all_clusterings = []
     best_score = math.inf
-    index_best = None
-    i = 0
-    while total_speakers < range_[0] or total_speakers > range_[1]:
-       
-        print(f"distance is {distance}")
-        print(f"total speakers is {total_speakers}")
-        sleep(1)
-        clustering, score = get_clustering(embeddings, num_speakers, num_speakers_auto, distance)
-        all_clusterings.append({'clustering':clustering,'score':score})
-        if score < best_score:
-            best_score = score
-            index_best = i
-        # TODO: FIjarse maniana a partir de esto como elegir el mejor cluster en definitiva. le falta bastante a este codigo. 
-                
-        labels_div = clustering.labels_
-        labels, total_speakers = get_final_labels(labels_div, segs_per_seg)
-        if not num_speakers_auto:
+    index_best = 0 # esto queda raro, pero hay que ver si funca ... 
+    i = -1
+    break_outer = False
+    max_distance = distance
+    min_distance = distance
+    while not all_clusterings:
+        if break_outer:
             break
+        for _ in range(10):
+            is_best = False
+            sleep(1) # OJO: sacar este sleep 
+            print(f"distance is {distance} right after loop for")
+            print(f"total speakers is {total_speakers}")
+            sleep(1) # eventualmente sacar este sleep. Es solo para debuggear ... 
+            clustering, score = get_clustering(embeddings, num_speakers, num_speakers_auto, distance)
+            # all_clusterings.append({'clustering':clustering,'score':score})
         
-        if total_speakers < range_[0]: 
-            distance /= range_[0] - total_speakers + 1
-        elif total_speakers > range_[1]:
-            distance *= total_speakers - range_[0] + 1
-        i += 1
-        
-    all_clusterings
-           
-    labels = np.array(labels)  
+            # TODO: FIjarse maniana a partir de esto como elegir el mejor cluster en definitiva. le falta bastante a este codigo. 
+                    
+            labels_div = clustering.labels_
+            labels, total_speakers = get_final_labels(labels_div, segs_per_seg)
+            if not num_speakers_auto:
+                all_clusterings.append({'labels':labels, 'score':score,'total_speakers':total_speakers,'index':i,'best':is_best})
+                break_outer = True
+                break
+            
+            # OJO: aca lo mas correcto no seria recalcular el agglclustering, sino guardar los pesos para cada etapa del clustering. 
+            if total_speakers < range_[0]: # si no tengo suficientes speakers, tengo que aumentar la distancia
+
+                # Elijo por cuanto corregir la distancia. Siempre voy a corregir una porcion del rango maximo
+                correction_term = ((max_distance - min_distance) * (range_[0] - total_speakers)/(range_[0]+total_speakers)) * alpha
+                if correction_term == 0:
+                    correction_term = alpha
+                distance = distance - correction_term
+                if distance < 0:
+                    distance = alpha
+                print(f"Total speakers is less than range. distance is now {distance}")
+                min_distance = distance
+            elif total_speakers > range_[1]: # si me paso en numero de speakers, tengo que reducir la distancia
+                # Elijo por cuanto corregir la distancia. Siempre voy a corregir una porcion del rango maximo
+                correction_term = ((max_distance - min_distance) * (total_speakers - range_[1])/(range_[1]+total_speakers)) * alpha
+                if correction_term == 0:
+                    correction_term = alpha
+                distance = distance + correction_term     
+                print(f"Total speakers is more than range. distance is now {distance}")
+                max_distance = distance
+
+            else:
+                i += 1
+                if score < best_score:
+                    best_score = score
+                    index_best = i 
+                    is_best = True
+                distance = (random()*(max_distance-min_distance)) + min_distance
+                all_clusterings.append({'labels':labels, 'score':score,'total_speakers':total_speakers,'index':i,'best':is_best})
+            
+    #print(f"len of all_clusterings is {len(all_clusterings)}")
+    #if len(all_clusterings) > 1:
+        #assert all_clusterings[index_best]['best'] == True, "problems with best score"
+    
+    # Aca estamos recuperando solo el que dio el mejor indice, de todas las opciones ... luego podremos ver de recuperar varias opciones
+    # para que el usuario elija entre ellas la mejor.            
+    labels = np.array(all_clusterings[index_best]['labels']) 
+    print(f"final total speakers is {total_speakers}")
+    sleep(5)
+     
     return labels
     
    

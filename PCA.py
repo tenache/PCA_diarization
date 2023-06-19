@@ -33,10 +33,10 @@ from diarization_limpio import call_diarization
 
 n_components = 96
 def get_pca(directory, n_components):
-    print(f"directory is {directory}")
+    # print(f"directory is {directory}")
     audio_and_video_f = []
     for dirpath, dirnames, filenames in os.walk(directory):
-        print(f"directory is {directory}")
+        # print(f"directory is {directory}")
         for file in filenames:
             print(f"file is {file}")
             file_base, ext = os.path.splitext(file)
@@ -44,27 +44,35 @@ def get_pca(directory, n_components):
                 audio_and_video_f.append(os.path.join(dirpath, file))
     all_embeddings = []
     for file_path in audio_and_video_f:
-        print(f"file_path is {file_path}")
+        # print(f"file_path is {file_path}")
         embeddings, segments, audio_file, duration = get_embeddings(8, "English","tiny",1,file_path)
         for embedding in embeddings:
             all_embeddings.append(embedding)
     #OJO: cambiar n_components 
     pca = PCA(n_components=20,copy=True)
     # print(f"all_embeddings is {all_embeddings}")
-    print(f"all_embeddings.shape is {all_embeddings}")
+    # print(f"all_embeddings.shape is {all_embeddings}")
     max_len = 0
-    for embedding in all_embeddings:
-        print(f"len of embeddng is {len(embedding)}")
+    
+    #for embedding in all_embeddings:
+        # print(f"len of embeddng is {len(embedding)}")
     
     X = np.array(all_embeddings)
-    print(f"X.shape is {X.shape}")
+    # print(f"X.shape is {X.shape}")
 
-    print(X.shape)
+    # print(X.shape)
     #OJO: change components
     pca.fit(X)
     pca_path = os.path.join(directory, "pca.pkl")
-    pk.dump(pca,open(pca_path,"wb"))
+    with open(pca_path, "wb") as f:
+        pk.dump(pca, f)
     
+    temp_path = '/home/thibbard/thibbard/PCA_diarization/pca.pkl'
+    with open(temp_path, "wb") as f:
+        pk.dump(pca, f)
+    # pk.dump(pca,open(pca_path,"wb"))
+    # pk.dump(pca,open('/home/thibbard/thibbard/PCA_diarization/pca.pkl',"wb")) # borrar esto despues ... 
+        
     """
     # later reload the pickle file
     pca_reload = pk.load(open("pca.pkl",'rb'))
@@ -79,5 +87,5 @@ if __name__ == "__main__":
     get_pca('audios_2', 96)
     call_diarization('videoplayback.wav', root_dir='/home/thibbard/thibbard/PCA_diarization/audios_2', 
                      model_size='tiny', language="English", num_speakers=7, 
-                     segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time=True)
+                     segs_per_seg=1, embedding_name="speechbrain/spkrec-ecapa-voxceleb", tell_time=True, num_speakers_auto=True)
     
